@@ -302,6 +302,14 @@
 
     <div class="slider-row">
       <div class="slider-header">
+        <span class="slider-label">Number of rooms</span>
+        <span class="slider-value" id="val-rooms">3</span>
+      </div>
+      <input type="range" class="revenue-slider" id="rooms" min="1" max="10" step="1" value="3">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
         <span class="slider-label">Shared-room children</span>
         <span class="slider-value" id="val-shared-count">4</span>
       </div>
@@ -473,7 +481,6 @@
 <script>
   // ── Constants ──────────────────────────────────────────
   const COST_PER_MAID = 800 + 300 + 46; // salary + levy + insurance per maid
-  const TOTAL_ROOMS = 3;
   const CHILDREN_PER_SHARED_ROOM = 2;
 
   // ── Helpers ────────────────────────────────────────────
@@ -481,10 +488,16 @@
   const fmt = n => '$' + Math.abs(Math.round(n)).toLocaleString();
   const fmtSigned = n => (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString();
 
-  // ── Constrain shared-count based on private-count ──────
+  // ── Constrain sliders based on rooms + private-count ───
   function constrainSharedSlider() {
-    const privateCount = +$('private-count').value;
-    const availableRooms = Math.max(0, TOTAL_ROOMS - privateCount);
+    const totalRooms   = +$('rooms').value;
+    const privateSlider = $('private-count');
+    // Private count can't exceed total rooms
+    privateSlider.max = totalRooms;
+    if (+privateSlider.value > totalRooms) privateSlider.value = totalRooms;
+
+    const privateCount  = +privateSlider.value;
+    const availableRooms = Math.max(0, totalRooms - privateCount);
     const maxShared = availableRooms * CHILDREN_PER_SHARED_ROOM;
     const sharedSlider = $('shared-count');
     sharedSlider.max = maxShared;
@@ -498,6 +511,7 @@
   // ── Read inputs ────────────────────────────────────────
   function getValues() {
     return {
+      rooms:        +$('rooms').value,
       sharedCount:  +$('shared-count').value,
       sharedRate:   +$('shared-rate').value,
       privateCount: +$('private-count').value,
@@ -529,6 +543,7 @@
 
   // ── Update slider display values ───────────────────────
   function updateSliderLabels(v) {
+    $('val-rooms').textContent         = v.rooms;
     $('val-shared-count').textContent  = v.sharedCount;
     $('val-shared-rate').textContent   = fmt(v.sharedRate);
     $('val-private-count').textContent = v.privateCount;
@@ -580,7 +595,7 @@
   function updateBreakEven(v, c) {
     const be = c.breakEvenShared;
     const current = v.sharedCount;
-    const maxSlots = (TOTAL_ROOMS - v.privateCount) * CHILDREN_PER_SHARED_ROOM;
+    const maxSlots = (v.rooms - v.privateCount) * CHILDREN_PER_SHARED_ROOM;
 
     $('be-label').textContent = be <= 0
       ? 'Profitable even with 0 shared children'
@@ -707,7 +722,7 @@
   }
 
   // ── Wire up all sliders ────────────────────────────────
-  ['shared-count','shared-rate','private-count','private-rate',
+  ['rooms','shared-count','shared-rate','private-count','private-rate',
    'rent','food','utilities','repairs','maids'].forEach(id => {
     $(id).addEventListener('input', update);
   });
