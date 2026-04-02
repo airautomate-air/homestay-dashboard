@@ -32,7 +32,7 @@
   /* ── MAIN LAYOUT ── */
   .layout {
     display: flex;
-    height: calc(100vh - 42px);
+    height: 100%;
     overflow: hidden;
   }
 
@@ -283,6 +283,141 @@
     position: relative;
     min-height: 0;
   }
+
+  /* ── TABS ── */
+  .tab-bar {
+    height: 38px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #0d1526;
+    border-bottom: 1px solid #1e293b;
+    flex-shrink: 0;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .tab-btn:hover { background: #1e293b; color: #94a3b8; }
+  .tab-btn.active { background: #1e3a5f; color: #60a5fa; font-weight: 600; }
+
+  .tab-panel { display: none; height: calc(100vh - 80px); }
+  .tab-panel.active { display: block; }
+  #tab-todo { overflow-y: auto; padding: 16px 22px 24px; }
+
+  /* ── TO-DO PROGRESS ── */
+  .todo-progress {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 11px 16px;
+    margin-bottom: 14px;
+    border: 1px solid #334155;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .todo-progress-text { font-size: 12px; color: #94a3b8; white-space: nowrap; }
+  .todo-progress-bar-wrap {
+    flex: 1;
+    background: #0f172a;
+    border-radius: 4px;
+    height: 6px;
+  }
+  .todo-progress-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: #4ade80;
+    transition: width 0.3s ease;
+  }
+  .todo-progress-pct { font-size: 14px; font-weight: 700; color: #4ade80; min-width: 38px; text-align: right; }
+
+  /* ── CATEGORY GRID ── */
+  #todo-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+
+  /* ── CATEGORY BLOCK ── */
+  .todo-category { }
+  .todo-cat-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    padding: 7px 10px;
+    background: #1e293b;
+    border-radius: 7px 7px 0 0;
+    border: 1px solid #334155;
+    user-select: none;
+  }
+  .todo-cat-header:hover { background: #263548; }
+  .todo-cat-icon { font-size: 13px; }
+  .todo-cat-title { font-size: 11.5px; font-weight: 600; color: #e2e8f0; flex: 1; }
+  .todo-cat-count { font-size: 10px; color: #60a5fa; font-weight: 600; }
+  .todo-cat-chevron { font-size: 9px; color: #475569; transition: transform 0.2s; }
+  .todo-cat-header.collapsed { border-radius: 7px; }
+  .todo-cat-header.collapsed .todo-cat-chevron { transform: rotate(-90deg); }
+
+  .todo-items {
+    border: 1px solid #334155;
+    border-top: none;
+    border-radius: 0 0 7px 7px;
+    padding: 4px 4px;
+    background: #0d1526;
+  }
+  .todo-items.collapsed { display: none; }
+
+  /* ── ITEM ROW ── */
+  .todo-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 5px 7px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .todo-item:hover { background: #1e293b; }
+  .todo-item input[type=checkbox] {
+    margin-top: 2px;
+    flex-shrink: 0;
+    width: 13px;
+    height: 13px;
+    cursor: pointer;
+    accent-color: #4ade80;
+  }
+  .todo-item-text {
+    font-size: 11px;
+    color: #cbd5e1;
+    flex: 1;
+    line-height: 1.45;
+  }
+  .todo-item.done .todo-item-text {
+    text-decoration: line-through;
+    color: #334155;
+  }
+  .priority-badge {
+    font-size: 8px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    letter-spacing: 0.04em;
+  }
+  .p-high   { background: #450a0a; color: #f87171; }
+  .p-medium { background: #451a03; color: #fbbf24; }
+  .p-low    { background: #0c1a38; color: #60a5fa; }
 </style>
 </head>
 <body>
@@ -292,6 +427,12 @@
   <span>Singapore · Interactive Model</span>
 </header>
 
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+  <button class="tab-btn" data-tab="todo">✅ To-Do Checklist</button>
+</div>
+
+<div class="tab-panel active" id="tab-dashboard">
 <div class="layout">
 
   <!-- LEFT: CONTROLS -->
@@ -476,6 +617,18 @@
     </div>
 
   </div>
+</div>
+</div><!-- /tab-dashboard -->
+
+<div class="tab-panel" id="tab-todo">
+  <div class="todo-progress">
+    <span class="todo-progress-text" id="todo-progress-text">Loading…</span>
+    <div class="todo-progress-bar-wrap">
+      <div class="todo-progress-bar-fill" id="todo-progress-fill" style="width:0%"></div>
+    </div>
+    <span class="todo-progress-pct" id="todo-progress-pct">0%</span>
+  </div>
+  <div id="todo-container"></div>
 </div>
 
 <script>
@@ -729,6 +882,216 @@
 
   // Initial render
   update();
+
+  // ── Tab switching ───────────────────────────────────────
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ── Checklist data ─────────────────────────────────────
+  const CHECKLIST = [
+    {
+      id: 'legal', icon: '⚖️', title: 'Legal & Licensing',
+      items: [
+        { id: 'l1', p: 'HIGH',   t: 'Enquire with Singapore Tourism Board (STB) on Homestay licence requirements' },
+        { id: 'l2', p: 'HIGH',   t: 'Check URA guidelines on using a private condo for homestay / boarding purposes' },
+        { id: 'l3', p: 'HIGH',   t: 'Verify condo MCST by-laws — confirm subletting to multiple students is permitted' },
+        { id: 'l4', p: 'HIGH',   t: 'Obtain written consent from landlord for subletting to students' },
+        { id: 'l5', p: 'MEDIUM', t: 'Consult a lawyer to understand legal exposure as a homestay guardian' },
+        { id: 'l6', p: 'MEDIUM', t: 'Register business as sole proprietorship with ACRA if operating commercially' },
+        { id: 'l7', p: 'LOW',    t: 'Check if MOE has requirements for off-campus student housing near international schools' },
+      ]
+    },
+    {
+      id: 'ta', icon: '📄', title: 'Tenancy Agreement',
+      items: [
+        { id: 'ta1', p: 'HIGH',   t: 'Obtain a full copy of the Tenancy Agreement (TA) from landlord' },
+        { id: 'ta2', p: 'HIGH',   t: 'Check subletting clause — confirm subletting to boarders is permitted' },
+        { id: 'ta3', p: 'HIGH',   t: 'Review repair & maintenance clause — confirm who is responsible for repair costs' },
+        { id: 'ta4', p: 'HIGH',   t: 'Check permitted use clause — confirm homestay use is not a breach of TA' },
+        { id: 'ta5', p: 'MEDIUM', t: 'Review termination and notice period clauses' },
+        { id: 'ta6', p: 'MEDIUM', t: 'Check conditions for early termination by either party' },
+        { id: 'ta7', p: 'MEDIUM', t: 'Note rental escalation terms and options for lease renewal' },
+        { id: 'ta8', p: 'MEDIUM', t: "Check if property is mortgaged and whether the bank's terms allow subletting" },
+        { id: 'ta9', p: 'LOW',    t: 'Calendar TA expiry date and set a 3-month advance renewal reminder' },
+      ]
+    },
+    {
+      id: 'contract', icon: '📝', title: 'Student Contracts',
+      items: [
+        { id: 'c1',  p: 'HIGH',   t: 'Draft a formal Student Accommodation Agreement' },
+        { id: 'c2',  p: 'HIGH',   t: 'Include clear payment terms — annual upfront, deposit amount, refund policy' },
+        { id: 'c3',  p: 'HIGH',   t: 'Include cancellation policy — deposit forfeited, remainder pro-rated based on months remaining' },
+        { id: 'c4',  p: 'HIGH',   t: 'Ensure contract is signed by parent / legal guardian (not just the student)' },
+        { id: 'c5',  p: 'HIGH',   t: 'Include detailed house rules — curfew, visitors, noise, prohibited items, shared spaces' },
+        { id: 'c6',  p: 'HIGH',   t: 'Include emergency medical authorisation clause — permission to seek treatment on behalf of student' },
+        { id: 'c7',  p: 'HIGH',   t: 'Collect emergency contact details for each student (min. 2 contacts incl. home country)' },
+        { id: 'c8',  p: 'MEDIUM', t: 'Include room condition / inventory checklist to be signed at check-in and check-out' },
+        { id: 'c9',  p: 'MEDIUM', t: 'Clearly define what is included in fees — meals, utilities, laundry, Wi-Fi' },
+        { id: 'c10', p: 'MEDIUM', t: 'Include clause — operator not liable for loss or damage to personal belongings' },
+        { id: 'c11', p: 'MEDIUM', t: 'Have contract reviewed by a lawyer before first use' },
+        { id: 'c12', p: 'LOW',    t: "Consider translating key terms into the student's home language if needed" },
+      ]
+    },
+    {
+      id: 'fdw', icon: '🧑‍🍳', title: 'FDW / Maid',
+      items: [
+        { id: 'f1',  p: 'HIGH',   t: 'Verify FDW work permit is valid — check expiry date on MOM portal' },
+        { id: 'f2',  p: 'HIGH',   t: 'Set up GIRO for MOM FDW levy ($300 / month per maid)' },
+        { id: 'f3',  p: 'HIGH',   t: 'Purchase mandatory FDW medical insurance (minimum $15,000 inpatient coverage)' },
+        { id: 'f4',  p: 'HIGH',   t: 'Purchase FDW security bond ($5,000 — insure via bond insurer for ~$250/year)' },
+        { id: 'f5',  p: 'HIGH',   t: 'Ensure FDW is given at least 1 rest day per week (MOM requirement)' },
+        { id: 'f6',  p: 'MEDIUM', t: "Register FDW's residential address with MOM — must match condo address" },
+        { id: 'f7',  p: 'MEDIUM', t: 'Schedule FDW 6-monthly medical examination (required by MOM)' },
+        { id: 'f8',  p: 'MEDIUM', t: 'Draft FDW duties in writing — include cooking, cleaning and student care tasks' },
+        { id: 'f9',  p: 'MEDIUM', t: 'Ensure FDW has suitable accommodation and privacy within the unit (MOM standard)' },
+        { id: 'f10', p: 'LOW',    t: "Keep a certified copy of FDW's passport and work permit in a secure place" },
+        { id: 'f11', p: 'LOW',    t: 'If hiring additional maids, apply for extra work permits via MOM in advance' },
+      ]
+    },
+    {
+      id: 'insurance', icon: '🛡️', title: 'Insurance',
+      items: [
+        { id: 'i1', p: 'HIGH',   t: 'Purchase public liability insurance for homestay operations (covers injury / damage claims)' },
+        { id: 'i2', p: 'HIGH',   t: 'Purchase personal accident insurance covering all students residing in the unit' },
+        { id: 'i3', p: 'MEDIUM', t: 'Purchase home contents insurance for the condo' },
+        { id: 'i4', p: 'MEDIUM', t: 'Confirm FDW medical insurance and security bond are active and current' },
+        { id: 'i5', p: 'LOW',    t: 'Explore group medical coverage for students if not already covered by school policy' },
+      ]
+    },
+    {
+      id: 'finance', icon: '💰', title: 'Financial & Tax',
+      items: [
+        { id: 'fin1', p: 'HIGH',   t: 'Open a dedicated bank account for all homestay income and expenses' },
+        { id: 'fin2', p: 'HIGH',   t: 'Declare homestay income to IRAS as rental / business income (annual tax filing)' },
+        { id: 'fin3', p: 'HIGH',   t: 'Keep all receipts for deductible expenses — rent, food, utilities, maid, agent fees, repairs' },
+        { id: 'fin4', p: 'MEDIUM', t: 'Consult a tax advisor on allowable deductions and optimal income structure' },
+        { id: 'fin5', p: 'MEDIUM', t: 'Set up a simple monthly bookkeeping log (income vs expenses)' },
+        { id: 'fin6', p: 'MEDIUM', t: 'Set aside estimated tax provision each month (~15–20% of net profit)' },
+        { id: 'fin7', p: 'MEDIUM', t: 'Track agent fee payments per student — deductible as business expense' },
+        { id: 'fin8', p: 'LOW',    t: 'Check if GST registration applies — threshold is $1M annual taxable turnover' },
+      ]
+    },
+    {
+      id: 'safety', icon: '🔥', title: 'Safety & Operations',
+      items: [
+        { id: 's1',  p: 'HIGH',   t: 'Install working smoke detectors in all rooms and common areas' },
+        { id: 's2',  p: 'HIGH',   t: 'Ensure fire extinguisher is available and within its service date' },
+        { id: 's3',  p: 'HIGH',   t: 'Create and post emergency evacuation plan in a visible common area' },
+        { id: 's4',  p: 'HIGH',   t: 'Post emergency contact list — guardian, Police (999), Ambulance / Fire (995), nearest hospital' },
+        { id: 's5',  p: 'HIGH',   t: "Obtain signed medical emergency authorisation from each student's parents" },
+        { id: 's6',  p: 'MEDIUM', t: 'Maintain a well-stocked first aid kit accessible to all occupants' },
+        { id: 's7',  p: 'MEDIUM', t: "Identify nearest 24-hour clinic and hospital (KK Women's & Children's Hospital for minors)" },
+        { id: 's8',  p: 'MEDIUM', t: 'Create a WhatsApp group with all parents / guardians for regular updates and communication' },
+        { id: 's9',  p: 'MEDIUM', t: 'Distribute house rules in writing to all students and obtain signed acknowledgement' },
+        { id: 's10', p: 'MEDIUM', t: 'Photograph and document condition of all rooms before first student moves in' },
+        { id: 's11', p: 'LOW',    t: 'Consider installing CCTV in common areas — disclose in writing to students and parents' },
+        { id: 's12', p: 'LOW',    t: 'Set up a maintenance log to track all repair requests and completed works' },
+      ]
+    },
+    {
+      id: 'school', icon: '🏫', title: 'School Liaison',
+      items: [
+        { id: 'sc1', p: 'HIGH',   t: 'Register as an approved homestay guardian / host family with the international school' },
+        { id: 'sc2', p: 'HIGH',   t: "Obtain and read the school's code of conduct and requirements for homestay families" },
+        { id: 'sc3', p: 'HIGH',   t: "Exchange emergency contact numbers with the school's admin and student welfare team" },
+        { id: 'sc4', p: 'MEDIUM', t: "Understand the school's protocol for reporting absences, incidents and welfare concerns" },
+        { id: 'sc5', p: 'MEDIUM', t: 'Confirm each student\'s transport arrangements to and from school daily' },
+        { id: 'sc6', p: 'MEDIUM', t: 'Find out if the school conducts periodic home visits or welfare checks on homestay hosts' },
+        { id: 'sc7', p: 'LOW',    t: "Build a working relationship with the school's student counselling and welfare team" },
+      ]
+    },
+    {
+      id: 'immigration', icon: '🛂', title: 'Student Pass & Immigration',
+      items: [
+        { id: 'im1', p: 'HIGH',   t: 'Verify all students hold valid Student Passes — check expiry dates on ICA portal' },
+        { id: 'im2', p: 'HIGH',   t: 'Understand ICA reporting obligations if a student goes missing or leaves Singapore unexpectedly' },
+        { id: 'im3', p: 'HIGH',   t: "Keep a certified copy of each student's passport and Student Pass on file" },
+        { id: 'im4', p: 'MEDIUM', t: "Calendar each student's Student Pass expiry and set a 3-month renewal reminder" },
+        { id: 'im5', p: 'MEDIUM', t: 'Understand rules for students travelling out of Singapore during school holidays' },
+        { id: 'im6', p: 'LOW',    t: "Familiarise yourself with ICA's In-Principle Approval (IPA) process for incoming students" },
+      ]
+    },
+  ];
+
+  // ── Checklist render ────────────────────────────────────
+  function getSaved() {
+    return JSON.parse(localStorage.getItem('homestay-todo') || '{}');
+  }
+
+  function updateTodoProgress() {
+    const saved = getSaved();
+    const allItems = CHECKLIST.flatMap(c => c.items);
+    const total = allItems.length;
+    const done  = allItems.filter(i => saved[i.id]).length;
+    const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+    $('todo-progress-text').textContent = `${done} of ${total} tasks complete`;
+    $('todo-progress-fill').style.width = pct + '%';
+    $('todo-progress-pct').textContent  = pct + '%';
+    $('todo-progress-pct').style.color  = pct === 100 ? '#4ade80' : pct >= 60 ? '#fbbf24' : '#f87171';
+  }
+
+  function renderChecklist() {
+    const saved = getSaved();
+    const container = $('todo-container');
+    container.innerHTML = '';
+
+    CHECKLIST.forEach(cat => {
+      const checked = cat.items.filter(i => saved[i.id]).length;
+      const catDiv  = document.createElement('div');
+      catDiv.className = 'todo-category';
+
+      catDiv.innerHTML = `
+        <div class="todo-cat-header" data-cat="${cat.id}">
+          <span class="todo-cat-icon">${cat.icon}</span>
+          <span class="todo-cat-title">${cat.title}</span>
+          <span class="todo-cat-count" id="count-${cat.id}">${checked}/${cat.items.length}</span>
+          <span class="todo-cat-chevron">▼</span>
+        </div>
+        <div class="todo-items" id="cat-${cat.id}">
+          ${cat.items.map(item => `
+            <div class="todo-item${saved[item.id] ? ' done' : ''}" data-id="${item.id}">
+              <input type="checkbox" id="cb-${item.id}" ${saved[item.id] ? 'checked' : ''}>
+              <span class="todo-item-text">${item.t}</span>
+              <span class="priority-badge p-${item.p.toLowerCase()}">${item.p}</span>
+            </div>
+          `).join('')}
+        </div>`;
+
+      container.appendChild(catDiv);
+
+      // Collapse toggle
+      catDiv.querySelector('.todo-cat-header').addEventListener('click', e => {
+        if (e.target.tagName === 'INPUT') return;
+        catDiv.querySelector('.todo-cat-header').classList.toggle('collapsed');
+        catDiv.querySelector('.todo-items').classList.toggle('collapsed');
+      });
+
+      // Item toggle
+      catDiv.querySelectorAll('.todo-item').forEach(itemEl => {
+        itemEl.addEventListener('click', e => {
+          const cb  = itemEl.querySelector('input');
+          if (e.target !== cb) cb.checked = !cb.checked;
+          const newSaved = getSaved();
+          newSaved[itemEl.dataset.id] = cb.checked;
+          localStorage.setItem('homestay-todo', JSON.stringify(newSaved));
+          itemEl.classList.toggle('done', cb.checked);
+          const catChecked = cat.items.filter(i => getSaved()[i.id]).length;
+          $('count-' + cat.id).textContent = `${catChecked}/${cat.items.length}`;
+          updateTodoProgress();
+        });
+      });
+    });
+
+    updateTodoProgress();
+  }
+
+  renderChecklist();
 </script>
 </body>
 </html>
