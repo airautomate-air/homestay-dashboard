@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homestay Financial Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100vh;
+    overflow: hidden;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  /* ── HEADER ── */
+  header {
+    height: 42px;
+    padding: 0 20px;
+    border-bottom: 1px solid #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 15px; font-weight: 600; color: #f1f5f9; }
+  header span { font-size: 12px; color: #64748b; }
+
+  /* ── MAIN LAYOUT ── */
+  .layout {
+    display: flex;
+    height: calc(100vh - 42px);
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL ── */
+  .controls {
+    width: 290px;
+    flex-shrink: 0;
+    background: #0d1526;
+    border-right: 1px solid #1e293b;
+    padding: 12px 14px 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .controls h2 {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #60a5fa;
+    margin-bottom: 10px;
+  }
+
+  .section-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #475569;
+    margin: 10px 0 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #1e293b;
+  }
+
+  .slider-row { margin-bottom: 8px; }
+
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3px;
+  }
+
+  .slider-label { font-size: 11px; color: #94a3b8; }
+
+  .slider-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #f1f5f9;
+    min-width: 52px;
+    text-align: right;
+  }
+
+  input[type=range] {
+    width: 100%;
+    appearance: none;
+    height: 3px;
+    border-radius: 2px;
+    background: #1e293b;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range].revenue-slider::-webkit-slider-thumb {
+    appearance: none; width: 12px; height: 12px;
+    border-radius: 50%; background: #4ade80; cursor: pointer;
+    transition: transform 0.1s;
+  }
+  input[type=range].revenue-slider::-webkit-slider-thumb:hover { transform: scale(1.25); }
+  input[type=range].cost-slider::-webkit-slider-thumb {
+    appearance: none; width: 12px; height: 12px;
+    border-radius: 50%; background: #f87171; cursor: pointer;
+    transition: transform 0.1s;
+  }
+  input[type=range].cost-slider::-webkit-slider-thumb:hover { transform: scale(1.25); }
+
+  .hint {
+    font-size: 9px;
+    color: #475569;
+    margin-top: 2px;
+  }
+
+  /* Fixed costs compact box */
+  .fixed-costs {
+    background: #1e293b;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-top: 10px;
+  }
+  .fc-title {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #475569;
+    margin-bottom: 5px;
+  }
+  .fc-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 2px;
+  }
+  .fc-row span:last-child { color: #94a3b8; }
+  .fc-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 600;
+    color: #e2e8f0;
+    border-top: 1px solid #334155;
+    margin-top: 4px;
+    padding-top: 4px;
+  }
+
+  /* ── RIGHT PANEL ── */
+  .results {
+    flex: 1;
+    padding: 14px 18px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .kpi-card {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid #334155;
+  }
+  .kpi-label {
+    font-size: 10px;
+    color: #64748b;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .kpi-value {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+  .kpi-sub { font-size: 10px; color: #475569; }
+
+  .green { color: #4ade80; }
+  .red   { color: #f87171; }
+  .blue  { color: #60a5fa; }
+  .amber { color: #fbbf24; }
+
+  /* Annual line */
+  .annual-line {
+    background: #1e293b;
+    border-radius: 7px;
+    padding: 9px 14px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    border: 1px solid #334155;
+    flex-shrink: 0;
+  }
+  .al-label { font-size: 10px; color: #64748b; font-weight: 500; margin-right: 4px; }
+  .al-value { font-size: 14px; font-weight: 700; }
+  .al-note  { font-size: 9px; color: #475569; margin-left: 3px; }
+  .annual-divider { width: 1px; background: #334155; height: 20px; }
+
+  /* Break-even */
+  .breakeven-section {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border: 1px solid #334155;
+    flex-shrink: 0;
+  }
+  .breakeven-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 7px;
+  }
+  .breakeven-title { font-size: 11px; color: #94a3b8; font-weight: 500; }
+  .breakeven-status {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+  .status-profitable { background: #14532d; color: #4ade80; }
+  .status-loss       { background: #450a0a; color: #f87171; }
+  .status-breakeven  { background: #451a03; color: #fbbf24; }
+
+  .progress-track {
+    background: #0f172a;
+    border-radius: 4px;
+    height: 7px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease, background 0.3s ease;
+  }
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 9px;
+    color: #475569;
+  }
+
+  /* Charts */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+  }
+  .chart-card {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 10px 14px 8px;
+    border: 1px solid #334155;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .chart-card h3 {
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+  }
+  .chart-wrapper {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏠 Homestay Financial Dashboard</h1>
+  <span>Singapore · Interactive Model</span>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: CONTROLS -->
+  <div class="controls">
+    <h2>Variables</h2>
+
+    <div class="section-label">Revenue Drivers</div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Shared-room children</span>
+        <span class="slider-value" id="val-shared-count">4</span>
+      </div>
+      <input type="range" class="revenue-slider" id="shared-count" min="0" max="4" step="1" value="4">
+      <div class="hint" id="shared-room-hint">2 shared rooms → max 4 children</div>
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Shared room rate ($/mo)</span>
+        <span class="slider-value" id="val-shared-rate">$2,400</span>
+      </div>
+      <input type="range" class="revenue-slider" id="shared-rate" min="1500" max="4000" step="100" value="2400">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Private-room children</span>
+        <span class="slider-value" id="val-private-count">1</span>
+      </div>
+      <input type="range" class="revenue-slider" id="private-count" min="0" max="3" step="1" value="1">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Private room rate ($/mo)</span>
+        <span class="slider-value" id="val-private-rate">$3,500</span>
+      </div>
+      <input type="range" class="revenue-slider" id="private-rate" min="2000" max="5000" step="100" value="3500">
+    </div>
+
+    <div class="section-label">Cost Drivers</div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Rent ($/mo)</span>
+        <span class="slider-value" id="val-rent">$4,300</span>
+      </div>
+      <input type="range" class="cost-slider" id="rent" min="3000" max="15000" step="100" value="4300">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Food ($/mo)</span>
+        <span class="slider-value" id="val-food">$1,000</span>
+      </div>
+      <input type="range" class="cost-slider" id="food" min="0" max="3000" step="50" value="1000">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Utilities ($/mo)</span>
+        <span class="slider-value" id="val-utilities">$800</span>
+      </div>
+      <input type="range" class="cost-slider" id="utilities" min="100" max="3000" step="50" value="800">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Repairs buffer ($/mo)</span>
+        <span class="slider-value" id="val-repairs">$200</span>
+      </div>
+      <input type="range" class="cost-slider" id="repairs" min="0" max="1000" step="50" value="200">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Number of Maids</span>
+        <span class="slider-value" id="val-maids">1</span>
+      </div>
+      <input type="range" class="cost-slider" id="maids" min="1" max="5" step="1" value="1">
+    </div>
+
+    <div class="fixed-costs">
+      <div class="fc-title">Per-Maid Costs</div>
+      <div class="fc-row"><span>Salary</span><span>$800 / mo</span></div>
+      <div class="fc-row"><span>FDW levy (MOM)</span><span>$300 / mo</span></div>
+      <div class="fc-row"><span>FDW insurance</span><span>~$46 / mo</span></div>
+      <div class="fc-total">
+        <span>Total staff cost</span>
+        <span id="fc-staff-total">$1,146 / mo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: RESULTS -->
+  <div class="results">
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Monthly Revenue</div>
+        <div class="kpi-value green" id="kpi-revenue">$13,100</div>
+        <div class="kpi-sub" id="kpi-revenue-sub">from 5 children</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Monthly Expenses</div>
+        <div class="kpi-value red" id="kpi-expenses">$7,446</div>
+        <div class="kpi-sub" id="kpi-expenses-sub">incl. all costs</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Net Monthly Profit</div>
+        <div class="kpi-value blue" id="kpi-profit">$5,654</div>
+        <div class="kpi-sub" id="kpi-profit-sub">after all expenses</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Profit Margin</div>
+        <div class="kpi-value green" id="kpi-margin">43%</div>
+        <div class="kpi-sub" id="kpi-margin-sub">healthy</div>
+      </div>
+    </div>
+
+    <!-- Annual Line -->
+    <div class="annual-line">
+      <div>
+        <span class="al-label">Year 1 net</span>
+        <span class="al-value green" id="annual-yr1">$53,150</span>
+        <span class="al-note">(after agent fees)</span>
+      </div>
+      <div class="annual-divider"></div>
+      <div>
+        <span class="al-label">Year 2+ net</span>
+        <span class="al-value green" id="annual-yr2">$67,850</span>
+        <span class="al-note">(same students)</span>
+      </div>
+      <div class="annual-divider"></div>
+      <div>
+        <span class="al-label">Agent fees</span>
+        <span class="al-value amber" id="annual-agent">$13,100</span>
+        <span class="al-note">(1 month/child)</span>
+      </div>
+    </div>
+
+    <!-- Break-even -->
+    <div class="breakeven-section">
+      <div class="breakeven-header">
+        <span class="breakeven-title" id="be-label">Break-even at 3 shared children</span>
+        <span class="breakeven-status status-profitable" id="be-status">Profitable</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="be-bar" style="width:83%;background:#4ade80;"></div>
+      </div>
+      <div class="progress-labels">
+        <span>0 children</span>
+        <span id="be-progress-label">4 / 4 filled</span>
+        <span>4 shared slots</span>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Expense Breakdown</h3>
+        <div class="chart-wrapper">
+          <canvas id="donut-chart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Revenue vs Expenses</h3>
+        <div class="chart-wrapper">
+          <canvas id="bar-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── Constants ──────────────────────────────────────────
+  const COST_PER_MAID = 800 + 300 + 46; // salary + levy + insurance per maid
+  const TOTAL_ROOMS = 3;
+  const CHILDREN_PER_SHARED_ROOM = 2;
+
+  // ── Helpers ────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const fmt = n => '$' + Math.abs(Math.round(n)).toLocaleString();
+  const fmtSigned = n => (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString();
+
+  // ── Constrain shared-count based on private-count ──────
+  function constrainSharedSlider() {
+    const privateCount = +$('private-count').value;
+    const availableRooms = Math.max(0, TOTAL_ROOMS - privateCount);
+    const maxShared = availableRooms * CHILDREN_PER_SHARED_ROOM;
+    const sharedSlider = $('shared-count');
+    sharedSlider.max = maxShared;
+    if (+sharedSlider.value > maxShared) sharedSlider.value = maxShared;
+    $('shared-room-hint').textContent =
+      availableRooms === 0
+        ? 'No rooms available for shared'
+        : `${availableRooms} shared room${availableRooms !== 1 ? 's' : ''} → max ${maxShared} child${maxShared !== 1 ? 'ren' : ''}`;
+  }
+
+  // ── Read inputs ────────────────────────────────────────
+  function getValues() {
+    return {
+      sharedCount:  +$('shared-count').value,
+      sharedRate:   +$('shared-rate').value,
+      privateCount: +$('private-count').value,
+      privateRate:  +$('private-rate').value,
+      rent:         +$('rent').value,
+      food:         +$('food').value,
+      utilities:    +$('utilities').value,
+      repairs:      +$('repairs').value,
+      maids:        +$('maids').value,
+    };
+  }
+
+  // ── Calculations ───────────────────────────────────────
+  function calc(v) {
+    const staffCost = v.maids * COST_PER_MAID;
+    const revenue  = (v.sharedCount * v.sharedRate) + (v.privateCount * v.privateRate);
+    const expenses = v.rent + staffCost + v.food + v.utilities + v.repairs;
+    const profit   = revenue - expenses;
+    const margin   = revenue > 0 ? (profit / revenue) * 100 : 0;
+    const agentFees = (v.sharedCount * v.sharedRate) + (v.privateCount * v.privateRate);
+    const annualYr1 = (profit * 12) - agentFees;
+    const annualYr2 = profit * 12;
+    const totalChildren = v.sharedCount + v.privateCount;
+    const breakEvenShared = v.sharedRate > 0
+      ? Math.ceil((v.rent + staffCost + v.food + v.utilities + v.repairs - (v.privateCount * v.privateRate)) / v.sharedRate)
+      : 0;
+    return { revenue, expenses, profit, margin, agentFees, annualYr1, annualYr2, totalChildren, breakEvenShared, staffCost };
+  }
+
+  // ── Update slider display values ───────────────────────
+  function updateSliderLabels(v) {
+    $('val-shared-count').textContent  = v.sharedCount;
+    $('val-shared-rate').textContent   = fmt(v.sharedRate);
+    $('val-private-count').textContent = v.privateCount;
+    $('val-private-rate').textContent  = fmt(v.privateRate);
+    $('val-rent').textContent          = fmt(v.rent);
+    $('val-food').textContent          = fmt(v.food);
+    $('val-utilities').textContent     = fmt(v.utilities);
+    $('val-repairs').textContent       = fmt(v.repairs);
+    $('val-maids').textContent         = v.maids;
+  }
+
+  // ── Update KPI cards ───────────────────────────────────
+  function updateKPIs(v, c) {
+    $('kpi-revenue').textContent = fmt(c.revenue);
+    $('kpi-revenue-sub').textContent = `from ${c.totalChildren} child${c.totalChildren !== 1 ? 'ren' : ''}`;
+
+    $('kpi-expenses').textContent = fmt(c.expenses);
+    $('kpi-expenses-sub').textContent = `rent + staff + ops`;
+
+    const profitEl = $('kpi-profit');
+    profitEl.textContent = fmtSigned(c.profit);
+    profitEl.className = 'kpi-value ' + (c.profit >= 0 ? 'blue' : 'red');
+
+    const marginEl = $('kpi-margin');
+    marginEl.textContent = c.revenue > 0 ? Math.round(c.margin) + '%' : 'N/A';
+    let marginClass, marginSub;
+    if (c.margin >= 35)       { marginClass = 'green'; marginSub = 'healthy'; }
+    else if (c.margin >= 15)  { marginClass = 'amber'; marginSub = 'moderate'; }
+    else if (c.revenue === 0) { marginClass = 'red';   marginSub = 'no revenue'; }
+    else                      { marginClass = 'red';   marginSub = c.margin < 0 ? 'loss-making' : 'thin margin'; }
+    marginEl.className = 'kpi-value ' + marginClass;
+    $('kpi-margin-sub').textContent = marginSub;
+  }
+
+  // ── Update annual line ─────────────────────────────────
+  function updateAnnual(c) {
+    const yr1El = $('annual-yr1');
+    yr1El.textContent = fmtSigned(c.annualYr1);
+    yr1El.className = 'al-value ' + (c.annualYr1 >= 0 ? 'green' : 'red');
+
+    const yr2El = $('annual-yr2');
+    yr2El.textContent = fmtSigned(c.annualYr2);
+    yr2El.className = 'al-value ' + (c.annualYr2 >= 0 ? 'green' : 'red');
+
+    $('annual-agent').textContent = fmt(c.agentFees);
+  }
+
+  // ── Update break-even ──────────────────────────────────
+  function updateBreakEven(v, c) {
+    const be = c.breakEvenShared;
+    const current = v.sharedCount;
+    const maxSlots = (TOTAL_ROOMS - v.privateCount) * CHILDREN_PER_SHARED_ROOM;
+
+    $('be-label').textContent = be <= 0
+      ? 'Profitable even with 0 shared children'
+      : be > maxSlots
+        ? `Break-even requires ${be} shared children (exceeds capacity)`
+        : `Break-even at ${be} shared child${be !== 1 ? 'ren' : ''}`;
+
+    const pct = Math.min(100, Math.max(0, (current / Math.max(1, be)) * 100));
+    const bar = $('be-bar');
+    bar.style.width = pct + '%';
+
+    const statusEl = $('be-status');
+    if (c.profit > 0) {
+      bar.style.background = '#4ade80';
+      statusEl.textContent = 'Profitable';
+      statusEl.className = 'breakeven-status status-profitable';
+    } else if (c.profit === 0) {
+      bar.style.background = '#fbbf24';
+      statusEl.textContent = 'Break-even';
+      statusEl.className = 'breakeven-status status-breakeven';
+    } else {
+      bar.style.background = '#f87171';
+      statusEl.textContent = 'Loss';
+      statusEl.className = 'breakeven-status status-loss';
+    }
+
+    $('be-progress-label').textContent = `${current} / ${maxSlots} shared slots filled`;
+    $('be-progress-label').closest('.progress-labels').lastElementChild.textContent =
+      `${maxSlots} shared slots`;
+  }
+
+  // ── Charts ─────────────────────────────────────────────
+  Chart.defaults.color = '#94a3b8';
+
+  const donutChart = new Chart($('donut-chart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Rent', 'Food', 'Utilities', 'Staff & Levy', 'Repairs'],
+      datasets: [{
+        data: [4300, 1000, 800, COST_PER_MAID, 200],
+        backgroundColor: ['#f87171','#fb923c','#fbbf24','#a78bfa','#60a5fa'],
+        borderColor: '#1e293b',
+        borderWidth: 2,
+        hoverOffset: 5,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#94a3b8', font: { size: 9 }, padding: 8, boxWidth: 9 }
+        },
+        tooltip: {
+          callbacks: { label: ctx => ` $${ctx.raw.toLocaleString()} / mo` }
+        }
+      }
+    }
+  });
+
+  const barChart = new Chart($('bar-chart'), {
+    type: 'bar',
+    data: {
+      labels: ['Monthly'],
+      datasets: [
+        {
+          label: 'Revenue',
+          data: [13100],
+          backgroundColor: '#4ade8066',
+          borderColor: '#4ade80',
+          borderWidth: 1.5,
+          borderRadius: 4,
+        },
+        {
+          label: 'Expenses',
+          data: [7446],
+          backgroundColor: '#f8717166',
+          borderColor: '#f87171',
+          borderWidth: 1.5,
+          borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 11 } },
+        tooltip: {
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.raw.toLocaleString()}` }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } },
+        y: {
+          ticks: { color: '#64748b', font: { size: 10 }, callback: v => '$' + (v / 1000).toFixed(0) + 'k' },
+          grid: { color: '#1e293b' }
+        }
+      }
+    }
+  });
+
+  function updateCharts(v, c) {
+    $('fc-staff-total').textContent = fmt(c.staffCost) + ' / mo';
+    donutChart.data.datasets[0].data = [v.rent, v.food, v.utilities, c.staffCost, v.repairs];
+    donutChart.update('none');
+    barChart.data.datasets[0].data = [c.revenue];
+    barChart.data.datasets[1].data = [c.expenses];
+    barChart.update('none');
+  }
+
+  // ── Master update ──────────────────────────────────────
+  function update() {
+    constrainSharedSlider();
+    const v = getValues();
+    const c = calc(v);
+    updateSliderLabels(v);
+    updateKPIs(v, c);
+    updateAnnual(c);
+    updateBreakEven(v, c);
+    updateCharts(v, c);
+  }
+
+  // ── Wire up all sliders ────────────────────────────────
+  ['shared-count','shared-rate','private-count','private-rate',
+   'rent','food','utilities','repairs','maids'].forEach(id => {
+    $(id).addEventListener('input', update);
+  });
+
+  // Initial render
+  update();
+</script>
+</body>
+</html>
